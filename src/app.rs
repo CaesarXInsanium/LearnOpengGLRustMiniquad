@@ -1,7 +1,9 @@
 use crate::shader;
-use crate::texture::REM_IMAGE;
+use crate::shader::to_f32_array;
+use crate::texture::*;
 use crate::vertex::*;
-use image;
+use glam::vec3;
+use glam::Mat4;
 use miniquad::*;
 
 pub struct App {
@@ -9,6 +11,7 @@ pub struct App {
     height: i32,
     pipeline: Pipeline,
     bindings: Bindings,
+    uniforms: shader::AppUniforms
 }
 
 impl App {
@@ -16,22 +19,13 @@ impl App {
         let vertex_buffer = Buffer::immutable(ctx, BufferType::VertexBuffer, TRIANGLE_VERTICES);
         let index_buffer = Buffer::immutable(ctx, BufferType::IndexBuffer, TRIANGLE_INDICES);
 
-        let rem_img = image::load_from_memory(REM_IMAGE).expect("failed to load rem image");
-        let rem_rgba8 = rem_img.to_rgba8();
-        let rem_dim = rem_rgba8.dimensions();
-        let rem_texture = Texture::from_rgba8(
-            ctx,
-            rem_dim.0 as u16,
-            rem_dim.1 as u16,
-            rem_rgba8.into_raw().as_slice(),
-        );
-        rem_texture.set_filter(ctx, FilterMode::Nearest);
-        rem_texture.set_wrap(ctx, TextureWrap::Clamp);
+        let rem_texture = load_texture(ctx, REM_IMAGE);
+        let joan_texture = load_texture(ctx, JOAN_IMAGE);
 
         let bindings = Bindings {
             vertex_buffers: vec![vertex_buffer],
             index_buffer: index_buffer,
-            images: vec![rem_texture],
+            images: vec![rem_texture, joan_texture],
         };
         let shader =
             Shader::new(ctx, shader::VERTEX_SRC, shader::FRAG_SRC, shader::meta()).unwrap();
@@ -46,8 +40,15 @@ impl App {
             ],
             shader,
         );
+        let uniforms = shader::AppUniforms::default();
 
-        Self { width, height, pipeline, bindings }
+        Self {
+            width,
+            height,
+            pipeline,
+            bindings,
+            uniforms,
+        }
     }
 }
 
@@ -55,7 +56,6 @@ impl EventHandler for App {
     fn update(&mut self, _ctx: &mut Context) {}
 
     fn draw(&mut self, ctx: &mut Context) {
-
         ctx.clear(Some((0.1, 0.2, 0.3, 1.0)), Some(0.5), Some(0));
 
         // ctx.begin_default_pass(Default::default());
@@ -63,15 +63,15 @@ impl EventHandler for App {
 
         ctx.apply_pipeline(&self.pipeline);
         ctx.apply_bindings(&self.bindings);
-        for i in 0..10 {
-        let t = date::now();
-            let t = t + i as f64 * 0.3;
-            let offset = [t.sin() as f32 * 0.5, (t * 3.0).cos() as f32 * 0.5];
-            ctx.apply_uniforms(&shader::Uniforms {
-                offset: offset,
-            });
-            ctx.draw(0, 6, 1);
-        }
+
+        let axis = vec3(0.0, 0.0, 1.0);
+        let rotate = glam::Mat4::from_axis_angle(axis, 90.0f32.to_radians());
+        let scale = Mat4::from_scale(vec3(0.5f32, 0.5, 0.5));
+        let transform = rotate * scale;
+        self.uniforms.transform = to_f32_array(transform);
+        ctx.apply_uniforms(&self.uniforms);
+
+        ctx.draw(0, 6, 1);
         ctx.end_render_pass();
 
         ctx.commit_frame();
