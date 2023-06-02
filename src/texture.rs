@@ -10,7 +10,7 @@ pub fn load_texture(ctx: &mut Context, bytes: &[u8]) -> Texture {
 
     let texture = Texture::from_rgba8(ctx, dim.0 as u16, dim.1 as u16, rgba8.into_raw().as_slice());
 
-    texture.set_filter(ctx, FilterMode::Nearest);
+    texture.set_filter(ctx, FilterMode::Linear);
     texture.set_wrap(ctx, TextureWrap::Clamp);
     return texture;
 }

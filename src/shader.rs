@@ -10,7 +10,7 @@ pub struct AppUniforms {
     pub transform: [f32; 16],
 }
 
-pub fn to_f32_array(value: Mat4) -> [f32; 16] {
+pub fn mat4_to_f32_array(value: Mat4) -> [f32; 16] {
     let mut result = [
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     ];

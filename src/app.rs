@@ -1,5 +1,5 @@
 use crate::shader;
-use crate::shader::to_f32_array;
+use crate::shader::mat4_to_f32_array;
 use crate::texture::*;
 use crate::vertex::*;
 use glam::vec3;
@@ -11,7 +11,8 @@ pub struct App {
     height: i32,
     pipeline: Pipeline,
     bindings: Bindings,
-    uniforms: shader::AppUniforms
+    uniforms: shader::AppUniforms,
+    time_start: std::time::SystemTime,
 }
 
 impl App {
@@ -41,6 +42,7 @@ impl App {
             shader,
         );
         let uniforms = shader::AppUniforms::default();
+        let time_start = std::time::SystemTime::now();
 
         Self {
             width,
@@ -48,27 +50,43 @@ impl App {
             pipeline,
             bindings,
             uniforms,
+            time_start,
         }
     }
 }
 
 impl EventHandler for App {
+    fn resize_event(&mut self, ctx: &mut Context, width: f32, height: f32) {
+        self.width = width as i32;
+        self.height = height as i32;
+        ctx.apply_viewport(0, 0, self.width, self.height);
+    }
     fn update(&mut self, _ctx: &mut Context) {}
 
     fn draw(&mut self, ctx: &mut Context) {
-        ctx.clear(Some((0.1, 0.2, 0.3, 1.0)), Some(0.5), Some(0));
-
-        // ctx.begin_default_pass(Default::default());
+        // apply viewport before clearing
+        ctx.begin_default_pass(PassAction::Clear {
+            color: Some((0.1, 0.2, 0.3, 1.0)),
+            depth: Some(1.0),
+            stencil: None,
+        });
         ctx.apply_viewport(0, 0, self.width, self.height);
 
         ctx.apply_pipeline(&self.pipeline);
         ctx.apply_bindings(&self.bindings);
 
+        let time = std::time::SystemTime::now();
+        let delta = std::time::SystemTime::duration_since(&time, self.time_start)
+            .expect("failed to calculate time")
+            .as_millis() as f32
+            * 0.1;
+        let angle = (delta as f32).to_radians();
+
         let axis = vec3(0.0, 0.0, 1.0);
-        let rotate = glam::Mat4::from_axis_angle(axis, 90.0f32.to_radians());
+        let rotate = glam::Mat4::from_axis_angle(axis, angle);
         let scale = Mat4::from_scale(vec3(0.5f32, 0.5, 0.5));
         let transform = rotate * scale;
-        self.uniforms.transform = to_f32_array(transform);
+        self.uniforms.transform = mat4_to_f32_array(transform);
         ctx.apply_uniforms(&self.uniforms);
 
         ctx.draw(0, 6, 1);

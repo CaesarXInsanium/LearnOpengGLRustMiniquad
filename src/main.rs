@@ -13,7 +13,7 @@ fn main() {
         window_height: height,
         sample_count: 5,
         fullscreen: false,
-        window_resizable: false,
+        window_resizable: true,
         ..Default::default()
     };
     miniquad::start(conf, |mut ctx| Box::new(app::App::new(&mut ctx, 800, 800)));
