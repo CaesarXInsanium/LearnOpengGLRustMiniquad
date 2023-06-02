@@ -20,8 +20,8 @@ impl App {
         let vertex_buffer = Buffer::immutable(ctx, BufferType::VertexBuffer, TRIANGLE_VERTICES);
         let index_buffer = Buffer::immutable(ctx, BufferType::IndexBuffer, TRIANGLE_INDICES);
 
-        let rem_texture = load_texture(ctx, REM_IMAGE);
-        let joan_texture = load_texture(ctx, JOAN_IMAGE);
+        let rem_texture = load_texture(ctx, IMAGE01);
+        let joan_texture = load_texture(ctx, IMAGE02);
 
         let bindings = Bindings {
             vertex_buffers: vec![vertex_buffer],
@@ -61,7 +61,23 @@ impl EventHandler for App {
         self.height = height as i32;
         ctx.apply_viewport(0, 0, self.width, self.height);
     }
-    fn update(&mut self, _ctx: &mut Context) {}
+    // peform uniform calculations from here
+    fn update(&mut self, ctx: &mut Context) {
+        let time = std::time::SystemTime::now();
+        let delta = std::time::SystemTime::duration_since(&time, self.time_start)
+            .expect("failed to calculate time")
+            .as_millis() as f32
+            * 0.1;
+        let angle = (delta as f32).to_radians();
+
+        let axis = vec3(0.0, 0.0, 1.0);
+        let rotate = glam::Mat4::from_axis_angle(axis, angle);
+        let scale = Mat4::from_scale(vec3(0.5f32, 0.5, 0.5));
+        let translate = Mat4::from_translation(glam::vec3(0.5, -0.5, 0.0));
+        let transform = translate * rotate * scale;
+
+        self.uniforms.transform = mat4_to_f32_array(transform);
+    }
 
     fn draw(&mut self, ctx: &mut Context) {
         // apply viewport before clearing
@@ -75,18 +91,7 @@ impl EventHandler for App {
         ctx.apply_pipeline(&self.pipeline);
         ctx.apply_bindings(&self.bindings);
 
-        let time = std::time::SystemTime::now();
-        let delta = std::time::SystemTime::duration_since(&time, self.time_start)
-            .expect("failed to calculate time")
-            .as_millis() as f32
-            * 0.1;
-        let angle = (delta as f32).to_radians();
-
-        let axis = vec3(0.0, 0.0, 1.0);
-        let rotate = glam::Mat4::from_axis_angle(axis, angle);
-        let scale = Mat4::from_scale(vec3(0.5f32, 0.5, 0.5));
-        let transform = rotate * scale;
-        self.uniforms.transform = mat4_to_f32_array(transform);
+        // apply uniforms inside of the render function
         ctx.apply_uniforms(&self.uniforms);
 
         ctx.draw(0, 6, 1);

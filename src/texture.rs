@@ -1,7 +1,7 @@
 use miniquad::*;
 
-pub const REM_IMAGE: &[u8] = include_bytes!("rem.png");
-pub const JOAN_IMAGE: &[u8] = include_bytes!("alterjoan.png");
+pub const IMAGE01: &[u8] = include_bytes!("rem.png");
+pub const IMAGE02: &[u8] = include_bytes!("alterjoan.png");
 
 pub fn load_texture(ctx: &mut Context, bytes: &[u8]) -> Texture {
     let img = image::load_from_memory(bytes).expect("failed to load texture");
@@ -12,5 +12,6 @@ pub fn load_texture(ctx: &mut Context, bytes: &[u8]) -> Texture {
 
     texture.set_filter(ctx, FilterMode::Linear);
     texture.set_wrap(ctx, TextureWrap::Clamp);
+    texture.set_filter_min_mag(ctx, FilterMode::Nearest, FilterMode::Nearest);
     return texture;
 }
