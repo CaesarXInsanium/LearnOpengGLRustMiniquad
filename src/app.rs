@@ -63,20 +63,18 @@ impl EventHandler for App {
     }
     // peform uniform calculations from here
     fn update(&mut self, ctx: &mut Context) {
-        let time = std::time::SystemTime::now();
-        let delta = std::time::SystemTime::duration_since(&time, self.time_start)
-            .expect("failed to calculate time")
-            .as_millis() as f32
-            * 0.1;
-        let angle = (delta as f32).to_radians();
+        let model = glam::Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), -55.0f32.to_radians());
+        let view = glam::Mat4::from_translation(vec3(0.0, 0.0, -3.0));
+        let projection = glam::Mat4::perspective_rh(
+            45.0f32.to_radians(),
+            (self.width as f32) / (self.height as f32),
+            0.1,
+            100.0,
+        );
 
-        let axis = vec3(0.0, 0.0, 1.0);
-        let rotate = glam::Mat4::from_axis_angle(axis, angle);
-        let scale = Mat4::from_scale(vec3(0.5f32, 0.5, 0.5));
-        let translate = Mat4::from_translation(glam::vec3(0.5, -0.5, 0.0));
-        let transform = translate * rotate * scale;
-
-        self.uniforms.transform = mat4_to_f32_array(transform);
+        self.uniforms.model = mat4_to_f32_array(model);
+        self.uniforms.view = mat4_to_f32_array(view);
+        self.uniforms.projection = mat4_to_f32_array(projection);
     }
 
     fn draw(&mut self, ctx: &mut Context) {
