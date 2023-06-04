@@ -1,5 +1,6 @@
 #version 450 core
 
+in vec3 ourColor;
 in vec2 vTexCoord;
 
 uniform sampler2D tex01;

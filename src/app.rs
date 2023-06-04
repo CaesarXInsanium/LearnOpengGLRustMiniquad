@@ -3,13 +3,14 @@ use crate::shader::mat4_to_f32_array;
 use crate::texture::*;
 use crate::vertex::*;
 use glam::vec3;
-use glam::Mat4;
 use miniquad::*;
+use miniquad::native::gl as GL;
 
 pub struct App {
     width: i32,
     height: i32,
     pipeline: Pipeline,
+    index_count: i32,
     bindings: Bindings,
     uniforms: shader::AppUniforms,
     time_start: std::time::SystemTime,
@@ -17,8 +18,12 @@ pub struct App {
 
 impl App {
     pub fn new(ctx: &mut Context, width: i32, height: i32) -> App {
-        let vertex_buffer = Buffer::immutable(ctx, BufferType::VertexBuffer, TRIANGLE_VERTICES);
-        let index_buffer = Buffer::immutable(ctx, BufferType::IndexBuffer, TRIANGLE_INDICES);
+        // OpenGL flags
+        unsafe{
+            GL::glEnable(GL::GL_DEPTH_TEST);
+        }
+        let vertex_buffer = Buffer::immutable(ctx, BufferType::VertexBuffer, CUBE_ARRAY);
+        let index_buffer = Buffer::immutable(ctx, BufferType::IndexBuffer, CUBE_INDICES);
 
         let rem_texture = load_texture(ctx, IMAGE01);
         let joan_texture = load_texture(ctx, IMAGE02);
@@ -48,6 +53,7 @@ impl App {
             width,
             height,
             pipeline,
+        index_count: CUBE_INDICES.len() as i32,
             bindings,
             uniforms,
             time_start,
@@ -63,8 +69,14 @@ impl EventHandler for App {
     }
     // peform uniform calculations from here
     fn update(&mut self, ctx: &mut Context) {
-        let model = glam::Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), -55.0f32.to_radians());
+        let now = std::time::SystemTime::now();
+        let duration = now.duration_since(self.time_start).unwrap();
+        let delta = (duration.as_millis() as f32) * 0.1;
+
+        let model = glam::Mat4::from_axis_angle(vec3(0.5, 1.0, 0.0), delta.to_radians());
+
         let view = glam::Mat4::from_translation(vec3(0.0, 0.0, -3.0));
+
         let projection = glam::Mat4::perspective_rh(
             45.0f32.to_radians(),
             (self.width as f32) / (self.height as f32),
@@ -92,7 +104,7 @@ impl EventHandler for App {
         // apply uniforms inside of the render function
         ctx.apply_uniforms(&self.uniforms);
 
-        ctx.draw(0, 6, 1);
+        ctx.draw(0, self.index_count, 1);
         ctx.end_render_pass();
 
         ctx.commit_frame();

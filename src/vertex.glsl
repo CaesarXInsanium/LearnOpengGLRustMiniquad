@@ -8,6 +8,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+out vec3 ourColor;
 out vec2 vTexCoord;
 
 vec2 texture_coord_flip(vec2 coord){
